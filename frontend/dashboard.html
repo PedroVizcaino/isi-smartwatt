@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Energético | Autoconsumo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #777777;
+            --color-solar: #f59e0b;
+            --color-wind: #10b981;
+            --color-consumption: #ef4444;
+            --color-net: #3b82f6;
+            --color-grid: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- Barra de navegación --- */
+        .navbar {
+            background-color: var(--card-bg);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-item {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background-color: var(--color-net);
+            color: #ffffff;
+        }
+
+        /* --- Gestión de Vistas --- */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Estilos Generales Compartidos --- */
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--text-main);
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .card .unit {
+            font-size: 16px;
+            font-weight: normal;
+            color: var(--text-muted);
+        }
+
+        .val-solar {
+            color: var(--color-solar);
+        }
+
+        .val-wind {
+            color: var(--color-wind);
+        }
+
+        .val-cons {
+            color: var(--color-consumption);
+        }
+
+        .val-net {
+            color: var(--color-net);
+        }
+
+        .val-grid {
+            color: var(--color-grid);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .charts-container-full {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-card h3 {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+        }
+
+        /* --- NUEVO: Contenedores para limitar el tamaño de los gráficos --- */
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+            /* Altura fija para gráficos grandes */
+            width: 100%;
+        }
+
+        .chart-wrapper-small {
+            position: relative;
+            height: 250px;
+            /* Altura fija para el gráfico de donut */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* ----------------------------------------------------------------- */
+
+        /* --- Estilos del Chatbot --- */
+        .chat-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: var(--color-net);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #fafbfc;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .bot-message {
+            background-color: #ffffff;
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eee;
+        }
+
+        .user-message {
+            background-color: var(--color-net);
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input-area {
+            padding: 15px 20px;
+            background-color: #ffffff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-area input:focus {
+            border-color: var(--color-net);
+        }
+
+        .chat-input-area button {
+            background-color: var(--color-net);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .chat-input-area button:hover {
+            background-color: #2563eb;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                justify-content: center;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <button class="nav-item active" onclick="cambiarVista('consumo')">Mi consumo</button>
+        <button class="nav-item" onclick="cambiarVista('red')">Red eléctrica</button>
+        <button class="nav-item" onclick="cambiarVista('recomendaciones')">Recomendaciones</button>
+    </nav>
+
+    <div id="vista-consumo" class="view-section active">
+        <div class="header">
+            <h1>Mi Portal Energético</h1>
+            <p>Resumen de producción renovable y consumo eléctrico (Últimas 24 horas)</p>
+        </div>
+
+        <div class="kpi-container">
+            <div class="card">
+                <h3>Consumo Total</h3>
+                <p class="value val-cons">24.5 <span class="unit">kWh</span></p>
+            </div>
+            <div class="card">
+                <h3>Producción Solar</h3>
+                <p class="value val-solar">18.2 <span class="unit">kWh</span></p>
+            </div>
+            <div class="card">
+                <h3>Producción Eólica</h3>
+                <p class="value val-wind">12.4 <span class="unit">kWh</span></p>
+            </div>
+            <div class="card">
+                <h3>Balance Neto</h3>
+                <p class="value val-net">+6.1 <span class="unit">kWh</span></p>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Producción vs Consumo (Evolución diaria)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Origen de mi Energía</h3>
+                <div class="chart-wrapper-small">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="vista-red" class="view-section">
+        <div class="header">
+            <h1>Estado de la Red Eléctrica (España)</h1>
+            <p>Datos en tiempo real del operador del sistema (OMIE/REE)</p>
+        </div>
+
+        <div class="kpi-container">
+            <div class="card">
+                <h3>Precio Actual (PVPC)</h3>
+                <p class="value val-grid">0.114 <span class="unit">€/kWh</span></p>
+            </div>
+            <div class="card">
+                <h3>Generación Renovable</h3>
+                <p class="value val-wind">58.2 <span class="unit">%</span></p>
+            </div>
+            <div class="card">
+                <h3>Emisiones CO2</h3>
+                <p class="value val-text">145 <span class="unit">gCO2/kWh</span></p>
+            </div>
+            <div class="card">
+                <h3>Demanda Nacional</h3>
+                <p class="value val-cons">28,450 <span class="unit">MW</span></p>
+            </div>
+        </div>
+
+        <div class="charts-container-full">
+            <div class="chart-card">
+                <h3>Precio de la luz hoy (€/MWh) - Identifica horas valle</h3>
+                <div class="chart-wrapper">
+                    <canvas id="precioChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="vista-recomendaciones" class="view-section">
+        <div class="header">
+            <h1>Asistente Energético Virtual</h1>
+            <p>Recibe consejos personalizados para optimizar tu factura y reducir tu huella de carbono.</p>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <span>⚡ EcoAsistente AI</span>
+            </div>
+            <div class="chat-messages" id="chatBox">
+                <div class="message bot-message">
+                    ¡Hola! Soy tu asistente energético. Analizando tus datos de las últimas 24 horas, veo que tu balance
+                    neto es positivo (+6.1 kWh). ¡Buen trabajo! 👏
+                </div>
+                <div class="message bot-message">
+                    Sin embargo, he notado que estás consumiendo energía de la red a las 21:00h, cuando el precio está
+                    en su punto más alto (0.15€/kWh). ¿Te gustaría que te dé consejos para desplazar ese consumo?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="userInput"
+                    placeholder="Escribe tu pregunta aquí (ej: ¿A qué hora pongo la lavadora?)..."
+                    onkeypress="handleKeyPress(event)">
+                <button onclick="enviarMensaje()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Variables Globales para Gráficos ---
+        let lineChart, doughnutChart, precioChart;
+
+        // --- Lógica de Navegación de Pestañas ---
+        function cambiarVista(vistaId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('vista-' + vistaId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- Inicialización de Gráficos ---
+        function initCharts() {
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            lineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'top' } }, 
+                    scales: { 
+                        y: { beginAtZero: true },
+                        x: { 
+                            ticks: { 
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            } 
+                        }
+                    } 
+                }
+            });
+
+            const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+            doughnutChart = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: { labels: ['Solar', 'Eólica', 'Red Eléctrica'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#f59e0b', '#10b981', '#94a3b8'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const ctxPrecio = document.getElementById('precioChart').getContext('2d');
+            precioChart = new Chart(ctxPrecio, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Precio PVPC (€/kWh)', data: [], backgroundColor: [], borderRadius: 4 }] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        y: { beginAtZero: true },
+                        x: { 
+                            ticks: { 
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            } 
+                        }
+                    } 
+                }
+            });
+        }
+
+        // --- Fetch de Datos ---
+        async function refrescarDatos() {
+            try {
+                // 1. Datos de Consumo y Evolución
+                const resConsumo = await fetch('/api/consumo');
+                const dataConsumo = await resConsumo.json();
+
+                // Actualizar KPIs
+                document.querySelector('.val-cons').innerHTML = `${dataConsumo.kpis.consumo_total.toFixed(1)} <span class="unit">kWh</span>`;
+                document.querySelector('.val-solar').innerHTML = `${dataConsumo.kpis.prod_solar.toFixed(1)} <span class="unit">kWh</span>`;
+                document.querySelector('.val-wind').innerHTML = `${dataConsumo.kpis.prod_eolica.toFixed(1)} <span class="unit">kWh</span>`;
+                document.querySelector('.val-net').innerHTML = `${dataConsumo.kpis.balance_neto > 0 ? '+' : ''}${dataConsumo.kpis.balance_neto.toFixed(1)} <span class="unit">kWh</span>`;
+
+                // Actualizar Line Chart
+                lineChart.data.labels = dataConsumo.evolucion.map(e => e.hora);
+                lineChart.data.datasets = [
+                    { label: 'Consumo (kW)', data: dataConsumo.evolucion.map(e => e.consumo), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 2, tension: 0.4, fill: true },
+                    { label: 'Solar (kW)', data: dataConsumo.evolucion.map(e => e.solar), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 2, tension: 0.4, fill: true },
+                    { label: 'Eólica (kW)', data: dataConsumo.evolucion.map(e => e.eolica), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 2, tension: 0.4, fill: true }
+                ];
+                lineChart.update();
+
+                // Actualizar Doughnut
+                doughnutChart.data.datasets[0].data = [dataConsumo.kpis.prod_solar, dataConsumo.kpis.prod_eolica, dataConsumo.kpis.consumo_total * 0.2]; // Simplificado
+                doughnutChart.update();
+
+                // 2. Datos de Red y Precios
+                const resPrecio = await fetch('/api/precio');
+                const dataPrecio = await resPrecio.json();
+
+                document.querySelector('.val-grid').innerHTML = `${dataPrecio.actual.toFixed(5)} <span class="unit">€/kWh</span>`;
+
+                precioChart.data.labels = dataPrecio.historico.map(p => p.hora);
+                precioChart.data.datasets[0].data = dataPrecio.historico.map(p => p.precio);
+                precioChart.data.datasets[0].backgroundColor = dataPrecio.historico.map(p => {
+                    if (p.precio > 0.12) return 'rgba(239, 68, 68, 0.8)';
+                    if (p.precio < 0.08) return 'rgba(16, 185, 129, 0.8)';
+                    return 'rgba(245, 158, 11, 0.8)';
+                });
+                precioChart.update();
+
+                // 3. Datos de Tiempo (KPIs adicionales de red)
+                const resTiempo = await fetch('/api/tiempo');
+                const dataTiempo = await resTiempo.json();
+
+                // Actualizar KPIs de Red con datos reales
+                const cardsRed = document.querySelectorAll('#vista-red .card .value');
+                cardsRed[1].innerHTML = `${(100 - dataTiempo.nubes).toFixed(0)} <span class="unit">%</span>`; // Simulación de 'Gen Renovable'
+                cardsRed[2].innerHTML = `${dataTiempo.temp.toFixed(1)} <span class="unit">°C</span>`; // Cambiado a Temp local
+                cardsRed[3].innerHTML = `${dataTiempo.viento_vel.toFixed(1)} <span class="unit">m/s</span>`; // Cambiado a Viento local
+
+            } catch (error) {
+                console.error("Error al cargar datos:", error);
+            }
+        }
+
+        // --- Lógica del Chatbot ---
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') enviarMensaje();
+        }
+
+        async function enviarMensaje() {
+            const inputField = document.getElementById('userInput');
+            const texto = inputField.value.trim();
+            const chatBox = document.getElementById('chatBox');
+
+            if (texto === '') return;
+
+            // Mostrar mensaje del usuario
+            const msgUser = document.createElement('div');
+            msgUser.className = 'message user-message';
+            msgUser.textContent = texto;
+            chatBox.appendChild(msgUser);
+            inputField.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensaje: texto })
+                });
+                const data = await response.json();
+
+                const msgBot = document.createElement('div');
+                msgBot.className = 'message bot-message';
+                msgBot.innerHTML = data.respuesta;
+                chatBox.appendChild(msgBot);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                console.error("Error en el chat:", error);
+            }
+        }
+
+        // Inicializar todo al cargar
+        window.onload = () => {
+            initCharts();
+            refrescarDatos();
+            // Refrescar cada 5 minutos
+            setInterval(refrescarDatos, 300000);
+        };
+
+    </script>
+</body>
+
+</html>

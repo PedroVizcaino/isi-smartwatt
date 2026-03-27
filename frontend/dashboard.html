@@ -315,6 +315,7 @@
         <button class="nav-item active" onclick="cambiarVista('consumo')">Mi consumo</button>
         <button class="nav-item" onclick="cambiarVista('red')">Red eléctrica</button>
         <button class="nav-item" onclick="cambiarVista('recomendaciones')">Recomendaciones</button>
+        <button class="nav-item" id="btn-logout" onclick="cerrarSesion()" style="margin-left:auto">Cerrar sesión</button>
     </nav>
 
     <div id="vista-consumo" class="view-section active">
@@ -587,6 +588,15 @@
             // Refrescar cada 5 minutos
             setInterval(refrescarDatos, 300000);
         };
+
+        async function cerrarSesion() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+            } catch (e) {
+                console.error('Error al cerrar sesión:', e);
+            }
+            window.location.href = '/login';
+        }
 
     </script>
 </body>

@@ -2,11 +2,14 @@ import os
 import random
 import functools
 from datetime import datetime
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
 from backend.precio_kw import obtener_precios_corregido
 from backend.tiempo import obtener_datos_completos, MI_API_KEY, CIUDAD
 from backend.database import init_db, crear_usuario, verificar_usuario, obtener_usuario_por_id
+
+load_dotenv()
 
 app = Flask(__name__)
 _secret = os.environ.get('SECRET_KEY')

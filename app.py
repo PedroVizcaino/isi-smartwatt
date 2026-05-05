@@ -1,6 +1,7 @@
 import os
 import random
 import functools
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, session, redirect, url_for
@@ -171,32 +172,64 @@ def get_consumo():
         "evolucion": evolucion
     })
 
+def consultar_ollama(mensaje_usuario, contexto_extra):
+    """Consulta a Ollama usando el modelo gemma3:1b"""
+    url = "http://localhost:11434/api/chat"
+    
+    prompt_sistema = f"""Eres un asistente experto en gestión energética para el sistema ISI-SmartWatt. 
+Tu objetivo es ayudar al usuario a optimizar su consumo eléctrico y maximizar el uso de energías renovables.
+DISPONES DE LOS SIGUIENTES DATOS EN TIEMPO REAL:
+{contexto_extra}
+
+Instrucciones:
+1. Sé conciso y directo.
+2. Usa los datos proporcionados para dar consejos específicos (ej: 'Pon la lavadora ahora porque el precio es bajo').
+3. Si te preguntan algo fuera del tema energético, responde amablemente pero intenta reconducir la charla hacia el ahorro de energía.
+4. Responde siempre en español.
+"""
+
+    payload = {
+        "model": "gemma3:1b",
+        "messages": [
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": mensaje_usuario}
+        ],
+        "stream": False
+    }
+
+    try:
+        response = requests.post(url, json=payload, timeout=60)
+        if response.status_code == 200:
+            return response.json().get('message', {}).get('content', 'Lo siento, he tenido un problema procesando tu respuesta.')
+        else:
+            return "Lo siento, el servicio de IA no está disponible en este momento."
+    except Exception as e:
+        print(f"Error consultando Ollama: {e}")
+        return "No he podido conectar con mi cerebro de IA. ¿Está Ollama ejecutándose?"
+
 @app.route('/api/chat', methods=['POST'])
 @login_required
 def chat():
     data = request.json
-    mensaje = data.get('mensaje', '').lower()
+    mensaje = data.get('mensaje', '')
     
-    # Lógica simple de chatbot enriquecida con datos
+    # Obtener datos reales para el contexto
     precios = obtener_precios_corregido()
     datos_tiempo = obtener_datos_completos(CIUDAD, MI_API_KEY)
     
-    if 'lavadora' in mensaje:
-        # Buscar hora más barata
-        hora_barata = min(precios, key=lambda x: x['precio'])
-        respuesta = f"Te sugiero poner la lavadora a las {hora_barata['hora']}h. El precio será de {hora_barata['precio']:.5f} €/kWh, el más bajo de hoy."
-    elif 'solar' in mensaje or 'paneles' in mensaje:
-        nubes = datos_tiempo.get('nubes', 0)
-        if nubes < 20:
-            respuesta = "Hoy es un día excelente para la energía solar. Tienes menos del 20% de nubes."
-        else:
-            respuesta = f"Hoy hay un {nubes}% de nubes, la producción solar será moderada."
-    elif 'precio' in mensaje:
-        ahora = datetime.now().strftime('%H:00')
-        p_actual = next((p['precio'] for p in precios if p['hora'] == ahora), 0)
-        respuesta = f"El precio actual de la luz es de {p_actual:.5f} €/kWh."
-    else:
-        respuesta = "Interesante pregunta. Estoy monotorizando tus datos en tiempo real para darte el mejor consejo energético pronto."
+    # Preparar resumen de contexto para la IA
+    ahora = datetime.now().strftime('%H:00')
+    p_actual = next((p['precio'] for p in precios if p['hora'] == ahora), 0)
+    
+    contexto = f"- Hora actual: {ahora}\n"
+    contexto += f"- Precio actual de la luz: {p_actual:.5f} €/kWh\n"
+    if precios:
+        min_p = min(precios, key=lambda x: x['precio'])
+        contexto += f"- Hora más barata hoy: {min_p['hora']}h ({min_p['precio']:.5f} €/kWh)\n"
+    
+    contexto += f"- Clima en {CIUDAD}: {datos_tiempo.get('temp', 'N/A')}°C, {datos_tiempo.get('nubes', 0)}% de nubes, viento de {datos_tiempo.get('viento_vel', 0)} m/s.\n"
+
+    respuesta = consultar_ollama(mensaje, contexto)
         
     return jsonify({"respuesta": respuesta})
 

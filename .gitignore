@@ -1,4 +1,7 @@
 vens2/
 __pycache__/
 *.pyc
-.env
+*.env
+*.swp
+*.swo
+*.db

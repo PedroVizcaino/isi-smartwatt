@@ -315,7 +315,10 @@
         <button class="nav-item active" onclick="cambiarVista('consumo')">Mi consumo</button>
         <button class="nav-item" onclick="cambiarVista('red')">Red eléctrica</button>
         <button class="nav-item" onclick="cambiarVista('recomendaciones')">Recomendaciones</button>
-        <button class="nav-item" id="btn-logout" onclick="cerrarSesion()" style="margin-left:auto">Cerrar sesión</button>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span id="user-name-display" style="color: var(--text-muted); font-weight: 600; font-size: 14px; border-right: 1px solid #ddd; padding-right: 15px;">Cargando...</span>
+            <button class="nav-item" id="btn-logout" onclick="cerrarSesion()" style="padding: 10px 0;">Cerrar sesión</button>
+        </div>
     </nav>
 
     <div id="vista-consumo" class="view-section active">
@@ -581,10 +584,26 @@
             }
         }
 
+        // Fetch user info
+        async function fetchUserInfo() {
+            try {
+                const res = await fetch('/api/auth/me');
+                if (res.ok) {
+                    const user = await res.json();
+                    document.getElementById('user-name-display').textContent = user.nombre;
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error("Error al obtener info del usuario:", error);
+            }
+        }
+
         // Inicializar todo al cargar
         window.onload = () => {
             initCharts();
             refrescarDatos();
+            fetchUserInfo();
             // Refrescar cada 5 minutos
             setInterval(refrescarDatos, 300000);
         };

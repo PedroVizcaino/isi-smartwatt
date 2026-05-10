@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartWatt | Acceder</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #777777;
+            --color-net: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            margin: 0;
+            color: var(--color-net);
+        }
+
+        .logo p {
+            margin: 6px 0 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 28px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .tab.active {
+            color: var(--color-net);
+            border-bottom-color: var(--color-net);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--color-net);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 13px;
+            background-color: var(--color-net);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-primary:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success-msg {
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .form-panel {
+            display: none;
+        }
+
+        .form-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <div class="logo">
+            <h1>⚡ SmartWatt</h1>
+            <p>Gestión inteligente de energía</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-login" onclick="cambiarTab('login')">Iniciar sesión</div>
+            <div class="tab" id="tab-register" onclick="cambiarTab('register')">Registrarse</div>
+        </div>
+
+        <!-- Panel Login -->
+        <div class="form-panel active" id="panel-login">
+            <div class="error-msg" id="login-error"></div>
+            <div class="success-msg" id="login-success"></div>
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="tucorreo@ejemplo.com"
+                    onkeypress="handleKey(event, 'login')">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Contraseña</label>
+                <input type="password" id="login-password" placeholder="Tu contraseña"
+                    onkeypress="handleKey(event, 'login')">
+            </div>
+            <button class="btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+        </div>
+
+        <!-- Panel Registro -->
+        <div class="form-panel" id="panel-register">
+            <div class="error-msg" id="register-error"></div>
+            <div class="success-msg" id="register-success"></div>
+            <div class="form-group">
+                <label for="register-nombre">Nombre</label>
+                <input type="text" id="register-nombre" placeholder="Tu nombre"
+                    onkeypress="handleKey(event, 'register')">
+            </div>
+            <div class="form-group">
+                <label for="register-email">Email</label>
+                <input type="email" id="register-email" placeholder="tucorreo@ejemplo.com"
+                    onkeypress="handleKey(event, 'register')">
+            </div>
+            <div class="form-group">
+                <label for="register-password">Contraseña <span style="color:var(--text-muted);font-weight:400">(mín. 8 caracteres)</span></label>
+                <input type="password" id="register-password" placeholder="Elige una contraseña"
+                    onkeypress="handleKey(event, 'register')">
+            </div>
+            <button class="btn-primary" id="btn-register" onclick="doRegister()">Crear cuenta</button>
+        </div>
+    </div>
+
+    <script>
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('panel-' + tab).classList.add('active');
+        }
+
+        function handleKey(e, action) {
+            if (e.key === 'Enter') {
+                if (action === 'login') doLogin();
+                else doRegister();
+            }
+        }
+
+        function mostrarError(id, msg) {
+            const el = document.getElementById(id + '-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById(id + '-success').style.display = 'none';
+        }
+
+        function mostrarExito(id, msg) {
+            const el = document.getElementById(id + '-success');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById(id + '-error').style.display = 'none';
+        }
+
+        function ocultarMensajes(id) {
+            document.getElementById(id + '-error').style.display = 'none';
+            document.getElementById(id + '-success').style.display = 'none';
+        }
+
+        async function doLogin() {
+            ocultarMensajes('login');
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('btn-login');
+
+            if (!email || !password) {
+                mostrarError('login', 'Por favor rellena todos los campos.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Entrando...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    mostrarExito('login', `¡Bienvenido/a, ${data.nombre}! Redirigiendo...`);
+                    setTimeout(() => window.location.href = '/', 800);
+                } else {
+                    mostrarError('login', data.error || 'Error al iniciar sesión.');
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                }
+            } catch (e) {
+                mostrarError('login', 'Error de conexión. Inténtalo de nuevo.');
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            }
+        }
+
+        async function doRegister() {
+            ocultarMensajes('register');
+            const nombre = document.getElementById('register-nombre').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const btn = document.getElementById('btn-register');
+
+            if (!nombre || !email || !password) {
+                mostrarError('register', 'Por favor rellena todos los campos.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creando cuenta...';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ nombre, email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    mostrarExito('register', `¡Cuenta creada, ${data.nombre}! Redirigiendo...`);
+                    setTimeout(() => window.location.href = '/', 800);
+                } else {
+                    mostrarError('register', data.error || 'Error al registrarse.');
+                    btn.disabled = false;
+                    btn.textContent = 'Crear cuenta';
+                }
+            } catch (e) {
+                mostrarError('register', 'Error de conexión. Inténtalo de nuevo.');
+                btn.disabled = false;
+                btn.textContent = 'Crear cuenta';
+            }
+        }
+    </script>
+</body>
+
+</html>

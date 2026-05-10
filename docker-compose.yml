@@ -1,0 +1,71 @@
+services:
+  # Backend Flask
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - SECRET_KEY=smartwatt-dev-2026
+      - MYSQL_HOST=smartwatt-db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=smartwatt_user
+      - MYSQL_PASSWORD=SmartWatt2026!
+      - MYSQL_DATABASE=smartwatt_db
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    restart: on-failure
+
+  # Frontend Nginx
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # Base de Datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: smartwatt-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=smartwatt_db
+      - MYSQL_USER=smartwatt_user
+      - MYSQL_PASSWORD=SmartWatt2026!
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./schema_mysql.sql:/docker-entrypoint-initdb.d/schema_mysql.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # IA Ollama
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama-data:/root/.ollama
+
+  # Descarga automática del modelo
+  ollama-pull-model:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: "sleep 10 && ollama pull gemma2:2b"
+    depends_on:
+      - ollama
+
+volumes:
+  mysql-data:
+  ollama-data:

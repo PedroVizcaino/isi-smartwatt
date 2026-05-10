@@ -1,4 +1,26 @@
+# Entornos virtuales
 vens2/
+venv/
+.venv/
+env/
+
+# Caché de Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Variables de entorno
 .env
+.env.local
+
+# Archivos temporales de editores (Vim, VSCode, etc.)
+*.swp
+*.swo
+.vscode/
+.idea/
+.DS_Store
+
+# Datos de contenedores (ya están en el .gitignore de Docker, pero por seguridad)
+mysql-data/
+ollama-data/

@@ -13,158 +13,74 @@ cd isi-smartwatt
 
 ---
 
-## 🌦️ 2. Obtener API Key de OpenWeather
+## 🔑 2. Configuración de variables de entorno (.env)
 
-Este proyecto usa datos meteorológicos, por lo que necesitas una API Key.
+Este proyecto utiliza un archivo `.env` para gestionar claves y contraseñas de forma segura.
 
-### Pasos:
-
-1. Ir a: https://openweathermap.org/api
-2. Crear una cuenta gratuita
-3. Ir a tu perfil → **API Keys**
-4. Copiar la clave
-
-⚠️ Puede tardar unos minutos en activarse.
-
----
-
-## 🔑 3. Añadir la API Key al proyecto
-
-Busca en el código dónde se usa OpenWeather. Normalmente será algo como:
-
-```python
-API_KEY = "YOUR_API_KEY"
-```
-
-Y reemplázalo por:
-
-```python
-API_KEY = "tu_api_key_aqui"
-```
+1.  Crea una copia del archivo de ejemplo:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Abre el archivo `.env` y rellena los valores:
+    - **OPENWEATHER_API_KEY:** Obtén tu clave gratuita en [OpenWeatherMap](https://openweathermap.org/api).
+    - **SECRET_KEY:** Una clave aleatoria para proteger las sesiones de usuario.
 
 ---
 
-### ✅ Recomendación (mejor práctica)
+## ⚙️ 3. Uso del Makefile (Docker)
 
-Usar variables de entorno:
+Este proyecto está totalmente contenedorizado. El `Makefile` automatiza la instalación de Docker, la construcción de imágenes y la ejecución de tests.
 
-Crear archivo `.env`:
+### 🛠️ Gestión de contenedores
 
-```env
-OPENWEATHER_API_KEY=tu_api_key_aqui
-```
-
-Y en Python:
-
-```python
-import os
-
-API_KEY = os.getenv("OPENWEATHER_API_KEY")
-```
+| Comando | Descripción |
+| :--- | :--- |
+| `make start` | **Primer paso:** Instala Docker (si no existe) y construye las imágenes. |
+| `make run` | **Arrancar:** Levanta todos los servicios en segundo plano. |
+| `make status` | **Estado:** Muestra si los contenedores están funcionando. |
+| `make logs` | **Logs:** Muestra los mensajes de la App y la IA en tiempo real. |
+| `make stop` | **Parar:** Detiene los servicios sin borrar nada. |
+| `make restart` | **Reiniciar:** Reinicia todos los servicios. |
+| `make clean` | **Limpieza:** Borra imágenes, volúmenes y contenedores (libera espacio). |
 
 ---
 
-## ⚙️ 4. Uso del Makefile
+### 🧪 Tests de funcionalidad (Ejecutados dentro de Docker)
 
-Este proyecto usa un `Makefile` para automatizar todo el flujo. Aquí tienes qué hace cada comando:
+No necesitas instalar Python ni librerías en tu PC local. Los tests se ejecutan dentro del contenedor de la aplicación.
 
----
-
-### 🟢 `make start` → Configuración completa
-
-```bash
-make start
-```
-
-🔧 Este comando:
-
-* Crea un entorno virtual llamado `vens2` (si no existe)
-* Instala `pip` actualizado
-* Instala dependencias desde `requirements.txt`
-
-📌 Internamente hace:
-
-```bash
-python3 -m venv vens2
-vens2/bin/pip install -r requirements.txt
-```
-
-👉 Es el **primer comando que debes ejecutar siempre**
-
----
-
-### ▶️ `make run` → Ejecutar la aplicación
-
-```bash
-make run
-```
-
-🚀 Ejecuta:
-
-```bash
-vens2/bin/python app.py
-```
-
-👉 Inicia el proyecto principal (`app.py`)
-
----
-
-### 🧪 `make test` → Ejecutar tests
-
-```bash
-make test
-```
-
-🧪 Ejecuta pruebas usando `pytest`:
-
-```bash
-vens2/bin/python -m pytest test/
-```
-
-📌 Requisitos:
-
-* Debe existir carpeta `test/`
-* Debes tener `pytest` en `requirements.txt`
-
----
-
-### 🧹 `make clean` → Limpiar el proyecto
-
-```bash
-make clean
-```
-
-🧽 Elimina:
-
-* El entorno virtual `vens2`
-* Carpetas `__pycache__`
-
-📌 Internamente:
-
-```bash
-rm -rf vens2
-find . -type d -name "__pycache__" -exec rm -rf {} +
-```
-
-👉 Útil si algo falla y quieres empezar limpio
+| Comando | Qué verifica |
+| :--- | :--- |
+| `make test-api` | Conectividad del Backend Flask. |
+| `make test-db` | Conexión con MySQL y existencia de tablas. |
+| `make test-ia` | Estado de Ollama y modelos descargados. |
+| `make test-clima` | Conexión con la API de OpenWeather. |
+| `make test-precio` | Conexión con la API de Precios de Luz. |
+| `make test-all` | Ejecuta **toda** la suite de pruebas. |
 
 ---
 
 ## 🔄 5. Flujo completo recomendado
 
+Si es la primera vez que ejecutas el proyecto en este PC:
+
 ```bash
-# 1. Clonar
-git clone https://github.com/PedroVizcaino/isi-smartwatt.git
-cd isi-smartwatt
+# 1. Preparar Docker e imágenes (solo la primera vez)
+sudo make start
 
-# 2. Configurar entorno
-make start
+# 2. Arrancar la aplicación
+sudo make run
 
-# 3. Añadir API Key (manual o .env)
+# 3. Verificar que todo está bien
+make status
+make test-all
 
-# 4. Ejecutar app
-make run
+# 4. Ver progreso de la descarga de la IA
+make logs
 ```
 
----
+🚀 **SmartWatt estará disponible en:**
+*   Frontend: `http://localhost`
+*   Backend API: `http://localhost:5000`
+*   Ollama API: `http://localhost:11434`
 

@@ -9,8 +9,8 @@ Este archivo actúa como los "planos" de la casa SmartWatt. Proporciona una visi
 - **Backend**: [Flask (Python 3.9)](https://flask.palletsprojects.com/) - Servidor de API y lógica de negocio en contenedor.
 - **Frontend**: [Vanilla JS, HTML5, CSS3](https://developer.mozilla.org/es/docs/Web/JavaScript) - Servido por Nginx.
 - **Base de Datos**: [MySQL 8.0](https://www.mysql.com/) - Persistencia robusta en volumen Docker.
-- **IA (Cerebro)**: [Ollama](https://ollama.ai/) con el modelo `gemma2:2b` - Asistente inteligente local y privado.
-- **Proxy/Web Server**: [Nginx](https://nginx.org/) - Orquestador de rutas y servidor de archivos estáticos.
+- **IA (Cerebro)**: [Ollama](https://ollama.ai/) con el modelo `gemma2:2b` - Puerto **11435** (Modo Host).
+- **Proxy/Web Server**: [Nginx](https://nginx.org/) - Puerto **80** (Modo Host).
 
 ---
 
@@ -20,35 +20,29 @@ Este archivo actúa como los "planos" de la casa SmartWatt. Proporciona una visi
 /
 ├── app.py                  # API Server. Rutas de negocio y orquestación de IA.
 ├── backend/                # Lógica interna y conectores.
-│   ├── database.py         # Conector MySQL con lógica de reintento (Docker-ready).
-│   ├── mysql_manager.py    # Gestión avanzada de la BBDD.
+│   ├── database.py         # Conector MySQL (Conecta a 127.0.0.1:3307).
 │   ├── precio_kw.py        # Scraper de precios PVPC.
-│   └── tiempo.py           # Conector OpenWeather API.
+│   └── tiempo.py           # Conector OpenWeather (Lee de .env).
 ├── frontend/               # Interfaz de usuario (Servida por Nginx).
-│   ├── dashboard.html      # Panel principal con validación de sesión activa.
-│   └── login.html          # Sistema de acceso y registro.
-├── Dockerfile              # Instrucciones de construcción para el Backend.
-├── docker-compose.yml      # El "Director de Orquesta" de los 5 contenedores.
-├── nginx.conf              # Configuración de rutas y proxy inverso.
-├── Makefile                # Comandos simplificados (start, run, logs, clean).
-├── schema_mysql.sql        # Esquema inicial de la base de datos.
-├── requirements.txt        # Dependencias Python.
+├── .env                    # Configuración real (SECRET_KEY, OPENWEATHER_API_KEY).
+├── .env.example            # Plantilla de configuración.
+├── docker-compose.yml      # Configurado en 'network_mode: host' para estabilidad TLS.
+├── Makefile                # Comandos simplificados.
 └── agent.md                # Este documento (El Plano Maestro).
 ```
 
 ---
 
-## 3. 🐳 Arquitectura de Contenedores (Docker)
+## 3. 🐳 Arquitectura de Red (Modo Host)
 
-El sistema se divide en **5 servicios independientes** que se comunican entre sí:
+Para evitar problemas de certificados SSL/TLS y DNS que ocurren en algunos entornos con el "Bridge" de Docker, SmartWatt utiliza el **Modo Host**. Los contenedores comparten la pila de red del sistema operativo.
 
-| Servicio | Función | Imagen | Puerto (Host) |
+| Servicio | Función | Modo de Red | Puerto (Host) |
 | :--- | :--- | :--- | :--- |
-| **Frontend** | Servidor Web y Proxy | `nginx:alpine` | `80` |
-| **Backend** | Lógica y API | `python:3.9-slim` | `5000` (interno) |
-| **Database** | Almacenamiento MySQL | `mysql:8.0` | `3307` |
-| **Ollama** | Servidor de IA | `ollama/ollama` | `11434` (interno) |
-| **Pull-Model** | Descargador de IA | `ollama/ollama` | N/A |
+| **Frontend** | Nginx / UI | `host` | `80` |
+| **Backend** | Flask API | `host` | `5000` |
+| **Database** | MySQL | `bridge` | `3307` |
+| **Ollama** | Servidor IA | `host` | `11435` |
 
 ---
 

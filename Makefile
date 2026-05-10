@@ -63,6 +63,25 @@ logs:
 status:
 	$(DOCKER_COMPOSE) ps
 
+# 8. Tests de funcionalidad (Se ejecutan dentro de Docker)
+test-clima:
+	$(DOCKER_COMPOSE) exec backend python3 test/test_clima.py
+
+test-precio:
+	$(DOCKER_COMPOSE) exec backend python3 test/test_precio_luz.py
+
+test-api:
+	$(DOCKER_COMPOSE) exec backend python3 test/test_api.py
+
+test-db:
+	$(DOCKER_COMPOSE) exec backend python3 test/test_db.py
+
+test-ia:
+	$(DOCKER_COMPOSE) exec backend python3 test/test_ia.py
+
+test-all: test-api test-db test-ia test-clima test-precio
+	@echo "--- Todos los tests finalizados dentro de Docker ---"
+
 # 7. Limpieza profunda
 clean:
 	@echo "--- Limpiando entorno Docker ---"

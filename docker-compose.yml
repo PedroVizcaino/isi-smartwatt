@@ -4,31 +4,25 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    network_mode: host
     environment:
       - SECRET_KEY=smartwatt-dev-2026
-      - MYSQL_HOST=smartwatt-db
-      - MYSQL_PORT=3306
+      - MYSQL_HOST=127.0.0.1
+      - MYSQL_PORT=3307
       - MYSQL_USER=smartwatt_user
       - MYSQL_PASSWORD=SmartWatt2026!
       - MYSQL_DATABASE=smartwatt_db
-      - OLLAMA_HOST=http://ollama:11434
-    depends_on:
-      db:
-        condition: service_healthy
-      ollama:
-        condition: service_started
+      - OLLAMA_HOST=http://127.0.0.1:11435
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
     restart: on-failure
 
   # Frontend Nginx (Servidor Web)
   frontend:
     image: nginx:alpine
-    ports:
-      - "80:80"
+    network_mode: host
     volumes:
       - ./frontend:/usr/share/nginx/html
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - backend
 
   # Base de Datos MySQL
   db:
@@ -54,14 +48,24 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    network_mode: host
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11435
+      - OLLAMA_SSL_SKIP_VERIFY=true
     volumes:
       - ollama-data:/root/.ollama
+      - /etc/ssl/certs:/etc/ssl/certs:ro
 
   # Descarga automática del modelo
   ollama-pull-model:
     image: ollama/ollama:latest
+    network_mode: host
+    environment:
+      - OLLAMA_HOST=127.0.0.1:11435
+      - OLLAMA_SSL_SKIP_VERIFY=true
     volumes:
       - ollama-data:/root/.ollama
+      - /etc/ssl/certs:/etc/ssl/certs:ro
     entrypoint: [ "/bin/sh", "-c" ]
     command: "sleep 10 && ollama pull gemma2:2b"
     depends_on:

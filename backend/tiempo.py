@@ -62,8 +62,22 @@ def obtener_datos_completos(ciudad, api_key):
     except Exception as e:
         return {"error": str(e)}
 
-# --- TU CONFIGURACIÓN ---
-MI_API_KEY = "82d4149fee924c1ac0e31da6d5a27e06"
+# --- CONFIGURACIÓN ---
+import os
+
+# Priorizamos la variable de entorno (para Docker/.env)
+MI_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
+
+# Si no está en el entorno, intentamos leer el archivo (compatibilidad)
+if not MI_API_KEY:
+    TOKEN_FILE = "pon_tu_token_aqui.txt"
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            MI_API_KEY = f.read().strip()
+            # Si el archivo tiene el texto de ejemplo, lo tratamos como vacío
+            if MI_API_KEY == "PON_AQUI_TU_TOKEN":
+                MI_API_KEY = ""
+
 CIUDAD = "Ciudad Real,ES"
 
 if __name__ == "__main__":

@@ -68,10 +68,11 @@ El endpoint `/api/chat` utiliza el modelo **gemma2:2b**.
 
 Desde la raíz del proyecto, usa `sudo make` seguido de:
 
-1.  **`run`**: Levanta todo el sistema. Si hay cambios en el código, los reconstruye automáticamente.
-2.  **`logs`**: Muestra qué está pasando. Vital para ver el progreso de descarga de la IA.
-3.  **`stop`**: Apaga los motores.
-4.  **`clean`**: Borra todo (imágenes y datos) para un inicio desde cero absoluto.
+1.  **`install`**: Instala Docker y Docker Compose en el sistema (solo necesario una vez).
+2.  **`run`**: Levanta todo el sistema. Si hay cambios en el código, los reconstruye automáticamente.
+3.  **`logs`**: Muestra qué está pasando. Vital para ver el progreso de descarga de la IA.
+4.  **`stop`**: Apaga los motores.
+5.  **`clean`**: Borra todo (imágenes y datos) para un inicio desde cero absoluto.
 
 ---
 

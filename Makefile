@@ -8,6 +8,7 @@ help:
 	@echo "SmartWatt - Gestión del Proyecto"
 	@echo ""
 	@echo "Comandos disponibles:"
+	@echo "  make install - Instala Docker y Docker Compose en el sistema"
 	@echo "  make start   - Construye las imágenes de Docker (Primer paso)"
 	@echo "  make run     - Levanta todos los servicios (App, DB, IA)"
 	@echo "  make stop    - Detiene todos los servicios"
@@ -17,16 +18,23 @@ help:
 	@echo "  make clean   - Limpia contenedores, imágenes y volúmenes"
 	@echo ""
 
+# 0. Instala Docker (Pre-requisito)
+install:
+	@echo "--- Instalando Docker y Docker Compose ---"
+	sudo apt update
+	sudo apt install -y docker.io docker-compose-v2
+	@echo "--- Instalación completada ---"
+
 # 1. Instala lo necesario (Construye las imágenes)
 start:
-	@$(DOCKER_COMPOSE) version > /dev/null 2>&1 || (echo "❌ Error: No se encuentra 'docker-compose' ni 'docker compose'.\n👉 Instálalo con: sudo apt install docker-compose-v2" && exit 1)
+	@$(DOCKER_COMPOSE) version > /dev/null 2>&1 || (echo "⚠ Docker no detectado. Iniciando instalación..." && $(MAKE) install)
 	@echo "--- Preparando SmartWatt (Docker) ---"
 	$(DOCKER_COMPOSE) build
 	@echo "--- Construcción completada. Usa 'make run' para iniciar ---"
 
 # 2. Ejecuta la aplicación
 run:
-	@$(DOCKER_COMPOSE) version > /dev/null 2>&1 || (echo "❌ Error: No se encuentra 'docker-compose' ni 'docker compose'.\n👉 Instálalo con: sudo apt install docker-compose-v2" && exit 1)
+	@$(DOCKER_COMPOSE) version > /dev/null 2>&1 || (echo "⚠ Docker no detectado. Iniciando instalación..." && $(MAKE) install)
 	@echo "--- Iniciando SmartWatt (Modo Detached) ---"
 	$(DOCKER_COMPOSE) up -d --build
 	@echo ""

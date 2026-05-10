@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
     environment:
       - SECRET_KEY=smartwatt-dev-2026
       - MYSQL_HOST=smartwatt-db
@@ -19,13 +19,14 @@ services:
         condition: service_started
     restart: on-failure
 
-  # Frontend Nginx
+  # Frontend Nginx (Servidor Web)
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: nginx:alpine
     ports:
       - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - backend
 
